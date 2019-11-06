@@ -31,13 +31,13 @@ public class VehicleController {
 	VehicleService vehicleService;
 
 	@GetMapping(value = "/vehicles", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Object> getAllVehicles() {
+	public ResponseEntity<List<Vehicle>> getAllVehicles() {
 
 		List<Vehicle> vehicles = vehicleService.getAllVehicles();
 		if (vehicles.isEmpty()) {
 			throw new VehicleNotFoundException("No vehicle records were found");
 		}
-		return new ResponseEntity<Object>(vehicles, HttpStatus.OK);
+		return new ResponseEntity<List<Vehicle>>(vehicles, HttpStatus.OK);
 	}
 
 	@GetMapping(value = "/vehicles/{vin}", produces = MediaType.APPLICATION_JSON_VALUE)

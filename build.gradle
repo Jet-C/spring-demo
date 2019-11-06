@@ -6,6 +6,7 @@ plugins {
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
+
 sourceCompatibility = '1.8'
 
 configurations {
@@ -16,6 +17,8 @@ configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
 	}
+	integrationImplementation.extendsFrom testImplementation
+	integrationRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 repositories {
@@ -26,17 +29,61 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	
 	runtimeOnly 'com.h2database:h2'
+	
+	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {
-		exclude group: 'junit', module: 'junit'
+		exclude(group: 'junit', module: 'junit')
 	}
 	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+	testImplementation 'org.mockito:mockito-junit-jupiter:2.28.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.3.1'
 }
 
+sourceSets {
+
+	test {
+		java.srcDirs = ['src/test/java']
+		resources.srcDirs = ['src/test/resources']
+	}
+
+    integration {
+		java.srcDirs = ['src/integration/java']
+		resources.srcDirs = ['src/integration/resources']
+		compileClasspath += sourceSets.main.output + sourceSets.test.output
+		runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+    }
+}
+
+/*
+integration {
+	java.srcDirs = ['src/integration/java']
+	resources.srcDirs ['src/integration/resources']
+	compileClasspath += sourceSets.main.output + sourceSets.test.output
+    runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+}
+*/
+
+task integration(type:Test, description: 'Integration testing of API', group:'Verification') {
+	testClassesDirs = sourceSets.integration.output.classesDirs
+	classpath = sourceSets.integration.runtimeClasspath
+	println 'Running integration tests'
+	outputs.upToDateWhen {false}
+	useJUnitPlatform(){
+		failFast = true
+	}
+}
+
+
 test {
+	maxHeapSize = '1024m'
 	useJUnitPlatform()
 }
+
+build.dependsOn integration
+integration.mustRunAfter test
