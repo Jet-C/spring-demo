@@ -60,15 +60,6 @@ sourceSets {
     }
 }
 
-/*
-integration {
-	java.srcDirs = ['src/integration/java']
-	resources.srcDirs ['src/integration/resources']
-	compileClasspath += sourceSets.main.output + sourceSets.test.output
-    runtimeClasspath += sourceSets.main.output + sourceSets.test.output
-}
-*/
-
 task integration(type:Test, description: 'Integration testing of API', group:'Verification') {
 	testClassesDirs = sourceSets.integration.output.classesDirs
 	classpath = sourceSets.integration.runtimeClasspath
