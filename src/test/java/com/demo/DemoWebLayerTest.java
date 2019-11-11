@@ -19,8 +19,8 @@ import static org.mockito.Mockito.verify;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -41,7 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(VehicleController.class)
-@Profile("test")
+@ActiveProfiles("test")
 public class DemoWebLayerTest {
 
 	/*

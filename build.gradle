@@ -63,7 +63,6 @@ sourceSets {
 task integration(type:Test, description: 'Integration testing of API', group:'Verification') {
 	testClassesDirs = sourceSets.integration.output.classesDirs
 	classpath = sourceSets.integration.runtimeClasspath
-	println 'Running integration tests'
 	outputs.upToDateWhen {false}
 	useJUnitPlatform(){
 		failFast = true
