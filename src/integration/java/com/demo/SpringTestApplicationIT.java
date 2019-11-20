@@ -1,5 +1,6 @@
 package com.demo;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
@@ -42,17 +43,22 @@ public class SpringTestApplicationIT {
 
 		assertEquals(responseEntity.getStatusCode(), HttpStatus.OK);
 		assertEquals(8, vehiclesResponseList.size());
-
+		assertTrue(vehiclesResponseList.stream().anyMatch((vehicle) -> {
+			return vehicle.getVin().equals("FR4EDED2150RFT5GE");
+		}));
 	}
 
 	@Test
-	public void getAllVehicles_ReturnsAllVehicle_OK() {
+	public void getVehicleById_ReturnsVehicle_OK() {
 
 		ResponseEntity<Vehicle> responseEntity = this.restTemplate
 				.getForEntity("http://localhost:" + port + "/demo/vehicles/FR4EDED2150RFT5GE", Vehicle.class);
-		System.out.print("\n\n\n\n\n\n" + responseEntity.getBody().toString());
-		System.out.print(responseEntity.getStatusCode());
+
 		assertEquals(responseEntity.getStatusCode(), HttpStatus.OK);
+		assertEquals("FR4EDED2150RFT5GE", responseEntity.getBody().getVin());
+		assertEquals("Ford", responseEntity.getBody().getMake());
+		assertEquals("Ranger", responseEntity.getBody().getModel());
+		assertEquals(new Integer(1992), responseEntity.getBody().getYear());
 	}
 
 }
