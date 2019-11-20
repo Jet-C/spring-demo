@@ -1,12 +1,3 @@
---DROP TABLE IF EXISTS VEHICLES;
---
---CREATE TABLE VEHICLES(
---  VIN VARCHAR(17) PRIMARY KEY,
---  make VARCHAR(50) NOT NULL,
---  model VARCHAR(50) NOT NULL,
---  year INT NOT NULL,
---  is_older BOOLEAN
---);
 
 INSERT INTO vehicles (VIN, make, model, year, is_older) VALUES
   ('FR45212A24D4SED66', 'Ford', 'F-150', 2010, false),

@@ -38,7 +38,11 @@ public class SpringTestApplicationIT {
 				new ParameterizedTypeReference<List<Vehicle>>() {
 				});
 
+		List<Vehicle> vehiclesResponseList = responseEntity.getBody();
+
 		assertEquals(responseEntity.getStatusCode(), HttpStatus.OK);
+		assertEquals(8, vehiclesResponseList.size());
+
 	}
 
 	@Test
