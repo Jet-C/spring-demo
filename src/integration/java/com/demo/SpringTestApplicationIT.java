@@ -2,6 +2,7 @@ package com.demo;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
@@ -23,6 +24,7 @@ import org.springframework.test.context.ActiveProfiles;
 import com.demo.dto.Vehicle;
 import com.demo.repository.VehicleRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /*
@@ -70,6 +72,27 @@ public class SpringTestApplicationIT {
 		assertEquals("Ford", responseEntity.getBody().getMake());
 		assertEquals("Ranger", responseEntity.getBody().getModel());
 		assertEquals(new Integer(1992), responseEntity.getBody().getYear());
+	}
+
+	@Test
+	public void GET_VehicleById_NotFound_404() {
+
+		// We are expecting an string error message in JSON
+		ResponseEntity<String> result = this.restTemplate.exchange(baseUrl + port + "/demo/vehicles/MISSING-VIN123456",
+				HttpMethod.GET, null, String.class);
+
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode jsonTree = null;
+		try {
+			jsonTree = mapper.readTree(result.getBody());
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		JsonNode jsonNode = jsonTree.get("errorMessage");
+
+		assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+		// Ensure the proper error message is set back to the client
+		assertTrue(jsonNode.asText().contains("404 Vehicle with VIN (MISSING-VIN123456) not found"));
 	}
 
 	@Test
@@ -148,6 +171,20 @@ public class SpringTestApplicationIT {
 		assertEquals("Ranger", responseEntity.getBody().getModel());
 		assertEquals(new Integer(1996), responseEntity.getBody().getYear());
 		assertFalse(responseEntity.getBody().getIs_older());
+	}
+
+	@Test
+	public void DELETE_vehicleById_NoContent_204() {
+
+		ResponseEntity<Object> responseEntity = this.restTemplate
+				.exchange(baseUrl + port + "/demo/vehicles/GMDE65A5ED66ER002", HttpMethod.DELETE, null, Object.class);
+
+		assertEquals(HttpStatus.NO_CONTENT, responseEntity.getStatusCode());
+		assertNull(responseEntity.getBody());
+
+		// Lets ensure the vehicle has been deleted from our embedded H2 db
+		Optional<Vehicle> optional = vehicleRepository.findById("GMDE65A5ED66ER002");
+		assertFalse(optional.isPresent());
 	}
 
 }

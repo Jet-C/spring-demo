@@ -62,7 +62,7 @@ public class VehicleServiceImpl implements VehicleService {
 
 		Optional<Vehicle> vehicle = vehicleRepository.findById(vin);
 
-		if (vehicle.isPresent()) {
+		if (!vehicle.isPresent()) {
 			throw new VehicleNotFoundException("Vehicle with VIN (" + vin + ") not found!");
 		}
 
