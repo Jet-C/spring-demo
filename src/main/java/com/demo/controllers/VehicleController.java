@@ -50,7 +50,6 @@ public class VehicleController {
 		return new ResponseEntity<Vehicle>(vehicleToUpdate.get(), HttpStatus.OK);
 	}
 
-// TODO: TEST WHAT HAPPENS IF YOU POST AN INVALID VEHICLE OBJ
 	@PostMapping(value = "/create/vehicle", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Vehicle> createVehicle(@Valid @RequestBody Vehicle createVehicle) {
 

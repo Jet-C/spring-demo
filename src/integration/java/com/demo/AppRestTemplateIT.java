@@ -34,10 +34,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT, classes = SpringTestApplication.class)
 @ActiveProfiles("integration")
-public class SpringTestApplicationIT {
+public class AppRestTemplateIT {
 
-	final private int port = 8080;
-	final private String baseUrl = "http://localhost:";
+	final private static int port = 8080;
+	final private static String baseUrl = "http://localhost:";
 
 	@Autowired
 	private TestRestTemplate restTemplate;
@@ -46,7 +46,7 @@ public class SpringTestApplicationIT {
 	private VehicleRepository vehicleRepository;
 
 	@Test
-	public void GET_AllVehicles_ReturnsAllVehicles_OK() {
+	public void get_allVehicles_ReturnsAllVehicles_OK() {
 
 		ResponseEntity<List<Vehicle>> responseEntity = this.restTemplate.exchange(baseUrl + port + "/demo/vehicles",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Vehicle>>() {
@@ -62,20 +62,21 @@ public class SpringTestApplicationIT {
 	}
 
 	@Test
-	public void GET_VehicleById_ReturnsVehicle_OK() {
+	public void get_vehicleById_Returns_Vehicle_OK() {
 
 		ResponseEntity<Vehicle> responseEntity = this.restTemplate
-				.getForEntity(baseUrl + port + "/demo/vehicles/FR4EDED2150RFT5GE", Vehicle.class);
+				.getForEntity(baseUrl + port + "/demo/vehicles/48955460210", Vehicle.class);
 
 		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-		assertEquals("FR4EDED2150RFT5GE", responseEntity.getBody().getVin());
+		assertEquals("48955460210", responseEntity.getBody().getVin());
 		assertEquals("Ford", responseEntity.getBody().getMake());
-		assertEquals("Ranger", responseEntity.getBody().getModel());
-		assertEquals(new Integer(1992), responseEntity.getBody().getYear());
+		assertEquals("Mustang", responseEntity.getBody().getModel());
+		assertEquals(new Integer(1974), responseEntity.getBody().getYear());
+		assertTrue(responseEntity.getBody().getIs_older());
 	}
 
 	@Test
-	public void GET_VehicleById_NotFound_404() {
+	public void get_vehicleById_Returns_NotFound_404() {
 
 		// We are expecting an string error message in JSON
 		ResponseEntity<String> result = this.restTemplate.exchange(baseUrl + port + "/demo/vehicles/MISSING-VIN123456",
@@ -91,12 +92,12 @@ public class SpringTestApplicationIT {
 		JsonNode jsonNode = jsonTree.get("errorMessage");
 
 		assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
-		// Ensure the proper error message is set back to the client
+		// Ensure the proper error message is sent back to the client
 		assertTrue(jsonNode.asText().contains("404 Vehicle with VIN (MISSING-VIN123456) not found"));
 	}
 
 	@Test
-	public void POST_createNewVehicle_Returns_201_Created() {
+	public void post_createNewVehicle_Returns_201_Created() {
 
 		ResponseEntity<Vehicle> responseEntity = null;
 
@@ -136,17 +137,51 @@ public class SpringTestApplicationIT {
 	}
 
 	@Test
-	public void PUT_updateVehicle_Returns_202_Accepted() {
+	public void post_createNewVehicle_Returns_400_BadRequest() {
+
+		ResponseEntity<String> result = null;
+
+		// Create new vehicle with a bad VIN length for the declared model year
+		Vehicle newVehicle = Vehicle.builder().vin("BAD-LENGTH-VIN").make("Chevrolet").model("Camaro").year(2018)
+				.is_older(false).build();
+
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode jsonNode = null;
+		// Our post consumes JSON format
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		try {
+			String vehicleJSONString = mapper.writeValueAsString(newVehicle);
+
+			HttpEntity<String> request = new HttpEntity<String>(vehicleJSONString, headers);
+			result = this.restTemplate.postForEntity(baseUrl + port + "/demo/create/vehicle", request, String.class);
+			// Our JSON error message has an "errorMessage" attribute
+			jsonNode = mapper.readTree(result.getBody()).get("errorMessage");
+
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+		// Ensure the proper error message is sent back to the client
+		assertTrue(jsonNode.asText().contains("VIN length is invalid for the declared year"));
+	}
+
+	@Test
+	public void put_updateVehicle_Returns_202_Accepted() {
 
 		ResponseEntity<Vehicle> responseEntity = null;
 
-		// Update vehicle. Need to update to the correct year 1992 -> 1996
+		// Update vehicle. Need to update to the correct year '1992' -> '1996'
 		Vehicle vehicleUpdate = Vehicle.builder().vin("FR4EDED2150RFT5GE").make("Ford").model("Ranger").year(1996)
 				.is_older(false).build();
 
 		ObjectMapper mapper = new ObjectMapper();
 		String vehicleJSONString = null;
-		// Our update consumes JSON format
+		// Our targeted URI consumes JSON format
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -174,7 +209,7 @@ public class SpringTestApplicationIT {
 	}
 
 	@Test
-	public void DELETE_vehicleById_NoContent_204() {
+	public void delete_vehicleById_Returns_NoContent_204() {
 
 		ResponseEntity<Object> responseEntity = this.restTemplate
 				.exchange(baseUrl + port + "/demo/vehicles/GMDE65A5ED66ER002", HttpMethod.DELETE, null, Object.class);
