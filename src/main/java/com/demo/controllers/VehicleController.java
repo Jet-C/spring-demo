@@ -50,7 +50,6 @@ public class VehicleController {
 		return new ResponseEntity<Vehicle>(vehicleToUpdate.get(), HttpStatus.OK);
 	}
 
-// TODO: TEST WHAT HAPPENS IF YOU POST AN INVALID VEHICLE OBJ
 	@PostMapping(value = "/create/vehicle", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Vehicle> createVehicle(@Valid @RequestBody Vehicle createVehicle) {
 
@@ -62,13 +61,13 @@ public class VehicleController {
 		return new ResponseEntity<Vehicle>(vehicleService.createVehicle(createVehicle), HttpStatus.CREATED);
 	}
 
-	@PutMapping(value = "update/vehicle/{vin}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PutMapping(value = "/update/vehicle/{vin}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Vehicle> updateVehicle(@PathVariable String vin, @Valid @RequestBody Vehicle vehicle) {
 
 		return new ResponseEntity<Vehicle>(vehicleService.updateVehicle(vin, vehicle), HttpStatus.ACCEPTED);
 	}
 
-	@DeleteMapping("vehicles/{vin}")
+	@DeleteMapping("/vehicles/{vin}")
 	public ResponseEntity<Object> deleteVehicle(@PathVariable(value = "vin") String vin) {
 
 		vehicleService.deleteVehicle(vin);

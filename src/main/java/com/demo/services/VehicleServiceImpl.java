@@ -41,19 +41,20 @@ public class VehicleServiceImpl implements VehicleService {
 	@Override
 	public Vehicle updateVehicle(String vin, Vehicle vehicleUpdate) {
 
-		if (vin != vehicleUpdate.getVin()) {
-			throw new HttpClientErrorException(HttpStatus.CONFLICT, "Vin does not match vehicle vin to update");
+		if (!vin.equals(vehicleUpdate.getVin())) {
+			throw new HttpClientErrorException(HttpStatus.CONFLICT, "Vin in URI does not match vehicle vin to update");
 		}
 
-		Optional<Vehicle> vehicleToUpdate = vehicleRepository.findById(vin);
+		Optional<Vehicle> op = vehicleRepository.findById(vin);
 
-		if (vehicleToUpdate.isPresent()) {
+		if (!op.isPresent()) {
 			throw new VehicleNotFoundException("Vehicle with VIN (" + vin + ") not found!");
 		}
+		Vehicle orginalVehicle = op.get();
 
-		BeanUtils.copyProperties(vehicleUpdate, vehicleToUpdate);
+		BeanUtils.copyProperties(vehicleUpdate, orginalVehicle);
 
-		return vehicleRepository.save(vehicleToUpdate.get());
+		return vehicleRepository.save(orginalVehicle);
 	}
 
 	@Override
@@ -61,7 +62,7 @@ public class VehicleServiceImpl implements VehicleService {
 
 		Optional<Vehicle> vehicle = vehicleRepository.findById(vin);
 
-		if (vehicle.isPresent()) {
+		if (!vehicle.isPresent()) {
 			throw new VehicleNotFoundException("Vehicle with VIN (" + vin + ") not found!");
 		}
 

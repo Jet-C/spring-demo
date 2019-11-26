@@ -29,18 +29,24 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'io.rest-assured:rest-assured-all:3.3.0'
+
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	
+
 	runtimeOnly 'com.h2database:h2'
-	
+
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+
+	testImplementation 'io.rest-assured:rest-assured:3.3.0'
+	testImplementation 'io.rest-assured:json-schema-validator:3.0.6'
 
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {
 		exclude(group: 'junit', module: 'junit')
 	}
 	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
 	testImplementation 'org.mockito:mockito-junit-jupiter:2.28.2'
+
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.3.1'
 }
