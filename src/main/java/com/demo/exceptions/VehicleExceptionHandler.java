@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpClientErrorException;
@@ -59,6 +60,18 @@ public class VehicleExceptionHandler extends ResponseEntityExceptionHandler {
 		ApiErrorMessage ApiErrorMessage = new ApiErrorMessage(ex.getLocalizedMessage(), request.getDescription(false),
 				errorDetailList);
 		return new ResponseEntity<Object>(ApiErrorMessage, status);
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+			HttpHeaders headers, HttpStatus status, WebRequest request) {
+		List<String> errorDetailList = new ArrayList<>();
+		errorDetailList.add(getErrorTimeAndDateFormatted());
+		errorDetailList.add(headers.getETag());
+		ApiErrorMessage ApiErrorMessage = new ApiErrorMessage(ex.getLocalizedMessage(), request.getDescription(false),
+				errorDetailList);
+		return new ResponseEntity<Object>(ApiErrorMessage, status);
+
 	}
 
 	private static String getErrorTimeAndDateFormatted() {

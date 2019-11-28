@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -27,6 +28,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import com.demo.controllers.VehicleController;
 import com.demo.dto.Vehicle;
@@ -52,6 +54,12 @@ public class DemoWebLayerTest {
 	MockMvc mockMvc;
 
 	/*
+	 * Jackson mapper for Object -> JSON conversion
+	 */
+	@Autowired
+	ObjectMapper mapper;
+
+	/*
 	 * We use @MockBean because the WebApplicationContext does not provide an
 	 * instance/bean of this service in its context. It only loads the beans solely
 	 * required for testing the controller
@@ -60,7 +68,7 @@ public class DemoWebLayerTest {
 	VehicleService vechicleService;
 
 	@Test
-	public void getAllVehicles_returnsOkWithListOfVehicles() throws Exception {
+	public void get_allVehicles_returnsOkWithListOfVehicles() throws Exception {
 
 		List<Vehicle> vehicleList = new ArrayList<>();
 		Vehicle vehicle1 = new Vehicle("AD23E5R98EFT3SL00", "Ford", "Fiesta", 2016, false);
@@ -72,51 +80,60 @@ public class DemoWebLayerTest {
 		Mockito.when(vechicleService.getAllVehicles()).thenReturn(vehicleList);
 
 		mockMvc.perform(MockMvcRequestBuilders.get("/demo/vehicles").contentType(MediaType.APPLICATION_JSON))
-				.andExpect(status().isOk()).andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(2)))
-				.andExpect(jsonPath("$[0].vin", org.hamcrest.Matchers.is("AD23E5R98EFT3SL00")))
-				.andExpect(jsonPath("$[0].make", org.hamcrest.Matchers.is("Ford")))
-				.andExpect(jsonPath("$[1].vin", org.hamcrest.Matchers.is("O90DEPADE564W4W83")))
-				.andExpect(jsonPath("$[1].make", org.hamcrest.Matchers.is("Volkswagen")));
+				.andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(2)))
+				.andExpect(jsonPath("$[0].vin", is("AD23E5R98EFT3SL00"))).andExpect(jsonPath("$[0].make", is("Ford")))
+				.andExpect(jsonPath("$[1].vin", is("O90DEPADE564W4W83")))
+				.andExpect(jsonPath("$[1].make", is("Volkswagen")));
 	}
 
 	@Test
-	public void createVehicle_createsNewVehicleAndReturnsObjWith201() throws Exception {
+	public void post_createsNewVehicleAndReturnsObjWith201() throws Exception {
 		Vehicle vehicle = new Vehicle("AD23E5R98EFT3SL00", "Ford", "Fiesta", 2016, false);
 
 		Mockito.when(vechicleService.createVehicle(Mockito.any(Vehicle.class))).thenReturn(vehicle);
 
-		// Using mapper to serialize vehicle object
-		ObjectMapper objectMapper = new ObjectMapper();
 		// Build post request with vehicle object payload
 		MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/demo/create/vehicle")
 				.contentType(MediaType.APPLICATION_JSON_VALUE).accept(MediaType.APPLICATION_JSON)
-				.characterEncoding("UTF-8").content(objectMapper.writeValueAsBytes(vehicle));
+				.characterEncoding("UTF-8").content(this.mapper.writeValueAsBytes(vehicle));
 
-		mockMvc.perform(builder).andExpect(status().isCreated())
-				.andExpect(jsonPath("$.vin", org.hamcrest.Matchers.is("AD23E5R98EFT3SL00")))
-				.andExpect(MockMvcResultMatchers.content().string(objectMapper.writeValueAsString(vehicle)));
+		mockMvc.perform(builder).andExpect(status().isCreated()).andExpect(jsonPath("$.vin", is("AD23E5R98EFT3SL00")))
+				.andExpect(MockMvcResultMatchers.content().string(this.mapper.writeValueAsString(vehicle)));
 	}
 
 	@Test
-	public void updateVehicle_updatesAndReturnsUpdatedObjWith202() throws Exception {
+	public void post_submitsInvalidVehicle_WithEmptyMake_Returns400() throws Exception {
+		// Create new vehicle with empty 'make' field
+		Vehicle vehicle = new Vehicle("AD23E5R98EFT3SL00", "", "Firebird", 1982, false);
+
+		String vehicleJsonString = this.mapper.writeValueAsString(vehicle);
+
+		ResultActions resultActions = mockMvc.perform(MockMvcRequestBuilders.post("/demo/create/vehicle/")
+				.contentType(MediaType.APPLICATION_JSON).content(vehicleJsonString)).andExpect(status().isBadRequest());
+
+		// @Valid annotation in controller will cause exception to be thrown
+		assertEquals(MethodArgumentNotValidException.class,
+				resultActions.andReturn().getResolvedException().getClass());
+		assertTrue(resultActions.andReturn().getResolvedException().getMessage().contains("'make' field was empty"));
+	}
+
+	@Test
+	public void put_updatesAndReturnsUpdatedObjWith202() throws Exception {
 		Vehicle vehicle = new Vehicle("AD23E5R98EFT3SL00", "Ford", "Fiesta", 2016, false);
 
 		Mockito.when(vechicleService.updateVehicle("AD23E5R98EFT3SL00", vehicle)).thenReturn(vehicle);
 
-		ObjectMapper objectMapper = new ObjectMapper();
-
 		MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
 				.put("/demo/update/vehicle/AD23E5R98EFT3SL00", vehicle).contentType(MediaType.APPLICATION_JSON_VALUE)
 				.accept(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
-				.content(objectMapper.writeValueAsBytes(vehicle));
+				.content(this.mapper.writeValueAsBytes(vehicle));
 
-		mockMvc.perform(builder).andExpect(status().isAccepted())
-				.andExpect(jsonPath("$.vin", org.hamcrest.Matchers.is("AD23E5R98EFT3SL00")))
-				.andExpect(MockMvcResultMatchers.content().string(objectMapper.writeValueAsString(vehicle)));
+		mockMvc.perform(builder).andExpect(status().isAccepted()).andExpect(jsonPath("$.vin", is("AD23E5R98EFT3SL00")))
+				.andExpect(MockMvcResultMatchers.content().string(this.mapper.writeValueAsString(vehicle)));
 	}
 
 	@Test
-	public void deleteVehicle_Returns204Status() throws Exception {
+	public void delete_deleteVehicle_Returns204Status() throws Exception {
 		String vehicleVin = "AD23E5R98EFT3SL00";
 
 		// Using Spy to partially mock the deleteVehicle method
@@ -130,9 +147,9 @@ public class DemoWebLayerTest {
 	}
 
 	@Test
-	public void getVehicleByVin_ThrowsVehicleNotFoundException() throws Exception {
+	public void get_vehicleByVin_ThrowsVehicleNotFoundException() throws Exception {
 
-		// Return an empty Optional object
+		// Return an empty Optional object since we didn't find the vin
 		Mockito.when(vechicleService.getVehicleByVin("AD23E5R98EFT3SL00")).thenReturn(Optional.empty());
 
 		ResultActions resultActions = mockMvc.perform(

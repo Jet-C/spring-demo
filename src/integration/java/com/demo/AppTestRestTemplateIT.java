@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,17 +30,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /*
- * @SpringBootTest - can be used when we need to bootstrap the entire container.
- * @ActiveProfiles - Select profile configurations. Will use (application-integration.properties)
+ * @SpringBootTest - Bootstraps the entire container and enables our @Test methods.
+ * @ActiveProfiles - Select profile configurations. We will use the (application-'integration'.properties)
  */
-
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT, classes = SpringTestApplication.class)
 @ActiveProfiles("integration")
-public class AppRestTemplateIT {
+public class AppTestRestTemplateIT {
 
 	final private static int port = 8080;
 	final private static String baseUrl = "http://localhost:";
 
+	/*
+	 * @SpringBootTest registers a TestRestTeplate bean so we can directly @Autowire
+	 * it in
+	 */
 	@Autowired
 	private TestRestTemplate restTemplate;
 
@@ -48,6 +53,9 @@ public class AppRestTemplateIT {
 	@Test
 	public void get_allVehicles_ReturnsAllVehicles_OK() {
 
+		List<String> expectedVINList = Stream.of("FR45212A24D4SED66", "FR4EDED2150RFT5GE", "XDFR6545DF3A5R896",
+				"XDFR64AE9F3A5R78S", "PQERS2A36458E98CD", "194678S400005", "48955460210").collect(Collectors.toList());
+
 		ResponseEntity<List<Vehicle>> responseEntity = this.restTemplate.exchange(baseUrl + port + "/demo/vehicles",
 				HttpMethod.GET, null, new ParameterizedTypeReference<List<Vehicle>>() {
 				});
@@ -55,9 +63,9 @@ public class AppRestTemplateIT {
 		List<Vehicle> vehiclesResponseList = responseEntity.getBody();
 
 		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-		assertEquals(8, vehiclesResponseList.size());
+		assertTrue(vehiclesResponseList.size() > 7);
 		assertTrue(vehiclesResponseList.stream().anyMatch((vehicle) -> {
-			return vehicle.getVin().equals("FR4EDED2150RFT5GE");
+			return expectedVINList.contains(vehicle.getVin());
 		}));
 	}
 
@@ -67,12 +75,11 @@ public class AppRestTemplateIT {
 		ResponseEntity<Vehicle> responseEntity = this.restTemplate
 				.getForEntity(baseUrl + port + "/demo/vehicles/48955460210", Vehicle.class);
 
+		Vehicle expectedVehicle = Vehicle.builder().vin("48955460210").make("Ford").model("Mustang").year(1974)
+				.is_older(true).build();
+
 		assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-		assertEquals("48955460210", responseEntity.getBody().getVin());
-		assertEquals("Ford", responseEntity.getBody().getMake());
-		assertEquals("Mustang", responseEntity.getBody().getModel());
-		assertEquals(new Integer(1974), responseEntity.getBody().getYear());
-		assertTrue(responseEntity.getBody().getIs_older());
+		assertEquals(expectedVehicle, responseEntity.getBody());
 	}
 
 	@Test
@@ -82,6 +89,7 @@ public class AppRestTemplateIT {
 		ResponseEntity<String> result = this.restTemplate.exchange(baseUrl + port + "/demo/vehicles/MISSING-VIN123456",
 				HttpMethod.GET, null, String.class);
 
+		// Parse JSON message response
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode jsonTree = null;
 		try {
@@ -92,43 +100,30 @@ public class AppRestTemplateIT {
 		JsonNode jsonNode = jsonTree.get("errorMessage");
 
 		assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
-		// Ensure the proper error message is sent back to the client
+		// Ensure the proper error message is received
 		assertTrue(jsonNode.asText().contains("404 Vehicle with VIN (MISSING-VIN123456) not found"));
 	}
 
 	@Test
 	public void post_createNewVehicle_Returns_201_Created() {
 
-		ResponseEntity<Vehicle> responseEntity = null;
-
-		// Create new vehicle
+		// Create a new vehicle
 		Vehicle newVehicle = Vehicle.builder().vin("X0RF654S54A65E66E").make("Toyota").model("Supra").year(2020)
 				.is_older(false).build();
 
-		ObjectMapper mapper = new ObjectMapper();
-		String vehicleJSONString = null;
-		// Our post consumes JSON format
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpEntity<Vehicle> request = new HttpEntity<Vehicle>(newVehicle, headers);
 
-		try {
-			vehicleJSONString = mapper.writeValueAsString(newVehicle);
-
-			HttpEntity<String> request = new HttpEntity<String>(vehicleJSONString, headers);
-			responseEntity = this.restTemplate.postForEntity(baseUrl + port + "/demo/create/vehicle", request,
-					Vehicle.class);
-
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		ResponseEntity<Vehicle> responseEntity = this.restTemplate
+				.postForEntity(baseUrl + port + "/demo/create/vehicle", request, Vehicle.class);
 
 		// Post request should return the newly created entity back to the client
 		assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
 		assertEquals("X0RF654S54A65E66E", responseEntity.getBody().getVin());
 		assertEquals("Toyota", responseEntity.getBody().getMake());
 		assertEquals("Supra", responseEntity.getBody().getModel());
+		assertFalse(responseEntity.getBody().getIs_older());
 
 		// Lets ensure this new vehicle has been stored in our embedded H2 db
 		Optional<Vehicle> op = vehicleRepository.findById("X0RF654S54A65E66E");
@@ -145,6 +140,7 @@ public class AppRestTemplateIT {
 		Vehicle newVehicle = Vehicle.builder().vin("BAD-LENGTH-VIN").make("Chevrolet").model("Camaro").year(2018)
 				.is_older(false).build();
 
+		// We'll use an object mapper to show our HttpEntity accepts JSON string
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode jsonNode = null;
 		// Our post consumes JSON format
@@ -166,46 +162,29 @@ public class AppRestTemplateIT {
 		}
 
 		assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
-		// Ensure the proper error message is sent back to the client
+		// Assert the expected error message
 		assertTrue(jsonNode.asText().contains("VIN length is invalid for the declared year"));
 	}
 
 	@Test
 	public void put_updateVehicle_Returns_202_Accepted() {
 
-		ResponseEntity<Vehicle> responseEntity = null;
-
 		// Update vehicle. Need to update to the correct year '1992' -> '1996'
 		Vehicle vehicleUpdate = Vehicle.builder().vin("FR4EDED2150RFT5GE").make("Ford").model("Ranger").year(1996)
 				.is_older(false).build();
 
-		ObjectMapper mapper = new ObjectMapper();
-		String vehicleJSONString = null;
 		// Our targeted URI consumes JSON format
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpEntity<Vehicle> requestEntity = new HttpEntity<Vehicle>(vehicleUpdate, headers);
 
-		try {
-			vehicleJSONString = mapper.writeValueAsString(vehicleUpdate);
-
-			HttpEntity<String> requestEntity = new HttpEntity<String>(vehicleJSONString, headers);
-
-			responseEntity = this.restTemplate.exchange(baseUrl + port + "/demo/update/vehicle/FR4EDED2150RFT5GE",
-					HttpMethod.PUT, requestEntity, Vehicle.class);
-
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		ResponseEntity<Vehicle> responseEntity = this.restTemplate.exchange(
+				baseUrl + port + "/demo/update/vehicle/FR4EDED2150RFT5GE", HttpMethod.PUT, requestEntity,
+				Vehicle.class);
 
 		// Put request should return the updated vehicle entity back to the client
 		assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
-		assertEquals("FR4EDED2150RFT5GE", responseEntity.getBody().getVin());
-		assertEquals("Ford", responseEntity.getBody().getMake());
-		assertEquals("Ranger", responseEntity.getBody().getModel());
-		assertEquals(new Integer(1996), responseEntity.getBody().getYear());
-		assertFalse(responseEntity.getBody().getIs_older());
+		assertEquals(vehicleUpdate, responseEntity.getBody());
 	}
 
 	@Test
