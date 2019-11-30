@@ -1,6 +1,6 @@
 package com.demo.exceptions;
 
-import java.util.List;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,11 +10,11 @@ public class ApiErrorMessage {
 
 	private String errorMessage;
 	private String requestingURI;
-	private List<String> errorDetails;
+	private Instant timeStamp;
 
-	public ApiErrorMessage(String messageError, String URI, List<String> errorDetails) {
+	public ApiErrorMessage(String messageError, String URI, Instant timeStamp) {
 		this.errorMessage = messageError;
 		this.requestingURI = URI;
-		this.errorDetails = errorDetails;
+		this.timeStamp = timeStamp;
 	}
 }

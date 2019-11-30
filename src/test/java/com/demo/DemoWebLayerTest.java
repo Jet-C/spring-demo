@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,7 +21,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -38,10 +36,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /*
  * @WebMvcTest - for testing the controller layer exclusively
- * Includes both the @AutoConfigureWebMvc and the @AutoConfigureMockMvc, among other functionality.
- * @ExtendWith - SpringExtension integrates the Spring TestContext Framework into JUnit 5's Jupiter programming model.
+ * Includes @ExtendWith(SpringExtension.class) for Spring TestContext Framework into JUnit 5's Jupiter programming model.
+ * @AutoConfigureWebMvc and the @AutoConfigureMockMvc are also included among other functionality.
  */
-@ExtendWith(SpringExtension.class)
 @WebMvcTest(VehicleController.class)
 @ActiveProfiles("test")
 public class DemoWebLayerTest {
@@ -60,9 +57,10 @@ public class DemoWebLayerTest {
 	ObjectMapper mapper;
 
 	/*
-	 * We use @MockBean because the WebApplicationContext does not provide an
-	 * instance/bean of this service in its context. It only loads the beans solely
-	 * required for testing the controller
+	 * We use @MockBean because the WebApplicationContext does not provide
+	 * any @Component, @Service or @Repository beans instance/bean of this service
+	 * in its context. It only loads the beans solely required for testing the
+	 * controller.
 	 */
 	@MockBean
 	VehicleService vechicleService;
@@ -87,7 +85,7 @@ public class DemoWebLayerTest {
 	}
 
 	@Test
-	public void post_createsNewVehicleAndReturnsObjWith201() throws Exception {
+	public void post_createsNewVehicle_andReturnsObjWith201() throws Exception {
 		Vehicle vehicle = new Vehicle("AD23E5R98EFT3SL00", "Ford", "Fiesta", 2016, false);
 
 		Mockito.when(vechicleService.createVehicle(Mockito.any(Vehicle.class))).thenReturn(vehicle);
@@ -136,7 +134,6 @@ public class DemoWebLayerTest {
 	public void delete_deleteVehicle_Returns204Status() throws Exception {
 		String vehicleVin = "AD23E5R98EFT3SL00";
 
-		// Using Spy to partially mock the deleteVehicle method
 		VehicleService serviceSpy = Mockito.spy(vechicleService);
 		Mockito.doNothing().when(serviceSpy).deleteVehicle(vehicleVin);
 

@@ -16,8 +16,8 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /*
- * Using lombok for auto-generation of boiler plate getters, setters, toString,
- * equals, hashcode, all-arg and no-arg constructors
+ * Using Lombok for auto-generation of boiler plate getters, setters, toString, builder
+ * equals, hashcode, toString, all-arg and no-arg constructors
  */
 
 @Data
@@ -47,8 +47,8 @@ public class Vehicle {
 
 	@Column(name = "year", nullable = false)
 	@NonNull
-	@DecimalMin(value = "1954", message = "VINs before 1954 are not accepted") // Fun fact: VINs were first used in 1954
-																				// in the United States
+	// Fun fact: VINs were first used until 1954 in the United States
+	@DecimalMin(value = "1954", message = "VINs before 1954 are not accepted")
 	private Integer year;
 
 	@Column(name = "is_older", nullable = true)

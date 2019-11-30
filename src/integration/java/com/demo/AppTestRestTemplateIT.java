@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /*
- * @SpringBootTest - Bootstraps the entire container and enables our @Test methods.
+ * @SpringBootTest - Run our app in as a test context enabling @Test methods.
  * @ActiveProfiles - Select profile configurations. We will use the (application-'integration'.properties)
  */
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT, classes = SpringTestApplication.class)
@@ -100,7 +100,7 @@ public class AppTestRestTemplateIT {
 		JsonNode jsonNode = jsonTree.get("errorMessage");
 
 		assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
-		// Ensure the proper error message is received
+		// Assert the proper error message is received
 		assertTrue(jsonNode.asText().contains("404 Vehicle with VIN (MISSING-VIN123456) not found"));
 	}
 
@@ -125,7 +125,7 @@ public class AppTestRestTemplateIT {
 		assertEquals("Supra", responseEntity.getBody().getModel());
 		assertFalse(responseEntity.getBody().getIs_older());
 
-		// Lets ensure this new vehicle has been stored in our embedded H2 db
+		// Double check this new vehicle has been stored in our embedded H2 db
 		Optional<Vehicle> op = vehicleRepository.findById("X0RF654S54A65E66E");
 		assertTrue(op.isPresent());
 		assertEquals("X0RF654S54A65E66E", op.get().getVin());
@@ -140,7 +140,7 @@ public class AppTestRestTemplateIT {
 		Vehicle newVehicle = Vehicle.builder().vin("BAD-LENGTH-VIN").make("Chevrolet").model("Camaro").year(2018)
 				.is_older(false).build();
 
-		// We'll use an object mapper to show our HttpEntity accepts JSON string
+		// We'll use an object mapper to show our HttpEntity also accepts JSON string
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode jsonNode = null;
 		// Our post consumes JSON format
@@ -196,7 +196,7 @@ public class AppTestRestTemplateIT {
 		assertEquals(HttpStatus.NO_CONTENT, responseEntity.getStatusCode());
 		assertNull(responseEntity.getBody());
 
-		// Lets ensure the vehicle has been deleted from our embedded H2 db
+		// Double check the vehicle has been deleted from our embedded H2 db
 		Optional<Vehicle> optional = vehicleRepository.findById("GMDE65A5ED66ER002");
 		assertFalse(optional.isPresent());
 	}

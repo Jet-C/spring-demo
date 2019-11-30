@@ -23,13 +23,16 @@ import com.demo.dto.Vehicle;
 import com.demo.exceptions.VehicleNotFoundException;
 import com.demo.services.VehicleService;
 
+import io.swagger.annotations.ApiOperation;
+
 @RestController
-@RequestMapping("demo")
+@RequestMapping("/demo")
 public class VehicleController {
 
 	@Autowired
 	VehicleService vehicleService;
 
+	@ApiOperation(value = "Retrives a list of all vehicles records")
 	@GetMapping(value = "/vehicles", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<Vehicle>> getAllVehicles() {
 
@@ -40,6 +43,7 @@ public class VehicleController {
 		return new ResponseEntity<List<Vehicle>>(vehicles, HttpStatus.OK);
 	}
 
+	@ApiOperation(value = "Retrives a single vehicle record by its VIN")
 	@GetMapping(value = "/vehicles/{vin}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Vehicle> getVechileByVin(@PathVariable(value = "vin") String vin) {
 
@@ -50,6 +54,7 @@ public class VehicleController {
 		return new ResponseEntity<Vehicle>(vehicleToUpdate.get(), HttpStatus.OK);
 	}
 
+	@ApiOperation(value = "Create a new vehicle record. JSON payload will be validated")
 	@PostMapping(value = "/create/vehicle", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Vehicle> createVehicle(@Valid @RequestBody Vehicle createVehicle) {
 
@@ -61,12 +66,14 @@ public class VehicleController {
 		return new ResponseEntity<Vehicle>(vehicleService.createVehicle(createVehicle), HttpStatus.CREATED);
 	}
 
+	@ApiOperation(value = "Update an existing vehicle record. Will not create new record if vehicle does not already exist")
 	@PutMapping(value = "/update/vehicle/{vin}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Vehicle> updateVehicle(@PathVariable String vin, @Valid @RequestBody Vehicle vehicle) {
 
 		return new ResponseEntity<Vehicle>(vehicleService.updateVehicle(vin, vehicle), HttpStatus.ACCEPTED);
 	}
 
+	@ApiOperation(value = "Delete an existing vehicle record using its VIN")
 	@DeleteMapping("/vehicles/{vin}")
 	public ResponseEntity<Object> deleteVehicle(@PathVariable(value = "vin") String vin) {
 

@@ -16,6 +16,11 @@ import io.restassured.response.ValidatableResponse;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
+/*
+ * @SpringBootTest - Run our app in as a test context enabling @Test methods.
+ * @ActiveProfiles - Select profile configurations. We will use the (application-'integration'.properties)
+ * @TestInstance - Enable @BeforeAll and share same instance of class for every test
+ */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = SpringTestApplication.class)
 @TestInstance(Lifecycle.PER_CLASS)
 @ActiveProfiles({ "integration" })

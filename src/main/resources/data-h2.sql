@@ -1,4 +1,4 @@
-
+-- Create 8 vehicle records for testing
 INSERT INTO vehicles (VIN, make, model, year, is_older) VALUES
   ('FR45212A24D4SED66', 'Ford', 'F-150', 2010, false),
   ('FR4EDED2150RFT5GE', 'Ford', 'Ranger', 1992, null),
