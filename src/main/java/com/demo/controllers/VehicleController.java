@@ -32,7 +32,7 @@ public class VehicleController {
 	@Autowired
 	VehicleService vehicleService;
 
-	@ApiOperation(value = "Retrives a list of all vehicles records")
+	@ApiOperation(value = "Retrieves a list of all vehicle records")
 	@GetMapping(value = "/vehicles", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<Vehicle>> getAllVehicles() {
 
